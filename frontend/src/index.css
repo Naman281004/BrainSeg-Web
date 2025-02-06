@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+body {
+  background-color: #262626;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gif-player img {
+  animation: fadeIn 0.3s ease-in;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  animation-delay: 0.5s;
+  animation-duration: 2s;
+}
+
+img[src$=".gif"] {
+  animation: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transition: opacity 0.3s ease-in-out;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
