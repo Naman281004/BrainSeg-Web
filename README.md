@@ -36,3 +36,7 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
+
+
+
+In the Test/Test_Data/ upload the 4 nifti files of any of the 24 samples to see the generated segmentation
