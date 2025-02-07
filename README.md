@@ -82,3 +82,5 @@ Left to resolve:
 2. footer's footer issue
 3. Celery Redis updation
 4. Internal Navigation 
+5. cybersec ddos
+6. scalability
