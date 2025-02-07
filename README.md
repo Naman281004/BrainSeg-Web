@@ -76,3 +76,9 @@ python manage.py runserver
 - Both frontend and backend servers must be running simultaneously 
 
 From the Test/Test_Data/ upload the 4 nifti files of any of the 24 samples to see the generated segmentation
+
+Left to resolve:
+1. dropdown issue
+2. footer's footer issue
+3. Celery Redis updation
+4. Internal Navigation 
