@@ -10,8 +10,11 @@ cd brainseg
 
 ### 2. Download Model Files
 Download these model files from Google Drive and place them in `backend/CODE_BRAINSEG/UNET_for_Multimodal_Semantic_Segmentation/`:
-- [best_model.pth](https://drive.google.com/file/d/1hHqU4qf6lxbeyXWNEK6hFlONqqA8JntE/view?usp=drive_link)
-- [model_weights.pth](https://drive.google.com/file/d/1OvFmdZXmB9s6f86bowy1vVn3FBQ52hwL/view?usp=drive_link)
+best_model.pth
+Link: https://drive.google.com/file/d/1hHqU4qf6lxbeyXWNEK6hFlONqqA8JntE/view?usp=sharing
+
+model_weights.pth
+Link: https://drive.google.com/file/d/1OvFmdZXmB9s6f86bowy1vVn3FBQ52hwL/view?usp=sharing
 
 ### 3. Frontend Setup
 ```bash
@@ -36,3 +39,7 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
+
+
+
+From the Test/Test_Data/ upload the 4 nifti files of any of the 24 samples to see the generated segmentation
