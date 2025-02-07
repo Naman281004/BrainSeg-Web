@@ -9,3 +9,4 @@ imageio
 Pillow
 python-dotenv
 firebase-admin
+psycopg2-binary
