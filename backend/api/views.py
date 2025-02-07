@@ -13,7 +13,6 @@ from django.conf import settings
 from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from firebase_admin import auth
-from celery import shared_task
 from django.core.cache import cache
 import uuid
 import threading
