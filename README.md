@@ -25,22 +25,10 @@ npm install
 # VITE_FIREBASE_API_KEY=xxx
 # VITE_FIREBASE_AUTH_DOMAIN=xxx
 # etc...
+//get it from me
 
 npm run dev
 ```
-
-### 4. Backend Setup
-```bash
-cd backend
-python -m venv env
-env\Scripts\activate     # On Windows
-env/bin/activate         # On linux
-deactivate                     # to deactivate the virtual environment
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
 ### 3. Database Setup
 1. Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
 2. During installation:
@@ -72,6 +60,19 @@ DB_PASSWORD={the password u set during installation}
 DB_HOST=localhost
 DB_PORT=5432 
 ```
+### 4. Backend Setup
+```bash
+cd backend
+python -m venv env
+env\Scripts\activate     # On Windows
+env/bin/activate         # On linux
+deactivate                     # to deactivate the virtual environment
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+
 - Both frontend and backend servers must be running simultaneously 
 
 From the Test/Test_Data/ upload the 4 nifti files of any of the 24 samples to see the generated segmentation
