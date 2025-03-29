@@ -17,7 +17,7 @@ except ImportError:
     def tqdm(iterable, *args, **kwargs):
         return iterable
 
-from .model import UNet3D
+# We'll import the model directly in the load_optimized_model function
 from django.conf import settings
 from django.contrib.auth.models import User
 from api.models import UserUpload
@@ -92,15 +92,26 @@ def process_brain_scans(file_paths, output_dir):
         
         update_progress(upload_obj, 80, "Running inference")
         with torch.inference_mode():
-            prediction = load_optimized_model(device)(image_tensor.unsqueeze(0).to(device))
-            prediction = torch.argmax(prediction, dim=1).cpu().numpy()[0]
+            model = load_optimized_model(device)
+            # New model returns [seg_out, recon_out, mu, logvar]
+            outputs = model(image_tensor.unsqueeze(0).to(device))
+            seg_out = outputs[0]  # Get the segmentation output
+            
+            # Handle the new output format from the model
+            if seg_out.dim() == 6:  # [B, 1, D, H, W, C]
+                seg_out = seg_out.squeeze(0).squeeze(0)  # Remove batch and extra dim
+                prediction = torch.argmax(seg_out, dim=-1).cpu().numpy()
+            else:
+                # Fallback to the old format for compatibility
+                prediction = torch.argmax(seg_out, dim=1).cpu().numpy()[0]
         
         update_progress(upload_obj, 90, "Creating visualizations")
-        create_quick_visualization(prediction, output_dir, images)
+        slice_paths = create_quick_visualization(prediction, output_dir, images)
         
         results = {
             'static_image': f'/media/results/{os.path.basename(output_dir)}/preview.png',
             'gif': f'/media/results/{os.path.basename(output_dir)}/animation.gif',
+            'slice_images': slice_paths,  # Add slice paths to results
             'metrics': calculate_metrics(prediction),
             'timestamp': time.time(),
             'progress': 100,
@@ -123,19 +134,21 @@ def process_brain_scans(file_paths, output_dir):
 
 def load_optimized_model(device):
     """Ultra-fast model loading with validation"""
-    model_path = os.path.join(os.path.dirname(__file__), "best_model.pth")
+    model_path = os.path.join(os.path.dirname(__file__), "weights.pth")
     print(f"Looking for model at: {model_path}")
     
     if not os.path.exists(model_path):
         parent_dir = os.path.dirname(os.path.dirname(__file__))
-        model_path = os.path.join(parent_dir, "best_model.pth")
+        model_path = os.path.join(parent_dir, "weights.pth")
         print(f"Model not found in default location, trying: {model_path}")
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model not found in any location!")
     
     try:
-        print("Loading model...")
-        model = UNet3D(in_channels=4, out_channels=4)
+        print("Loading BrainTumorSegModel model...")
+        from .model import BrainTumorSegModel
+        
+        model = BrainTumorSegModel()
         
         import torch.serialization
         safe_globals = [
@@ -158,8 +171,15 @@ def load_optimized_model(device):
                 if 'model_state_dict' in checkpoint:
                     model.load_state_dict(checkpoint['model_state_dict'])
                 elif 'state_dict' in checkpoint:
-                    model.load_state_dict(checkpoint['state_dict'])
+                    state_dict = checkpoint['state_dict']
+                    # Handle potential module prefix in state dict keys
+                    if all(k.startswith('module.') for k in state_dict.keys()):
+                        state_dict = {k[7:]: v for k, v in state_dict.items()}
+                    model.load_state_dict(state_dict)
                 else:
+                    # Handle potential module prefix in state dict keys
+                    if isinstance(checkpoint, dict) and all(k.startswith('module.') for k in checkpoint.keys()):
+                        checkpoint = {k[7:]: v for k, v in checkpoint.items()}
                     model.load_state_dict(checkpoint)
             else:
                 model.load_state_dict(checkpoint)
@@ -181,6 +201,9 @@ def load_optimized_model(device):
                 map_location=device,
                 pickle_module=torch._utils._rebuild_tensor_v2
             )
+            # Handle potential module prefix in state dict keys
+            if isinstance(checkpoint, dict) and all(k.startswith('module.') for k in checkpoint.keys()):
+                checkpoint = {k[7:]: v for k, v in checkpoint.items()}
             model.load_state_dict(checkpoint)
             model = model.to(device)
             model.eval()
@@ -223,6 +246,11 @@ def create_quick_visualization(prediction, output_dir, images):
         frames = []
         print("Creating animated visualization...")
         
+        # Create directory for individual slices
+        slices_dir = os.path.join(output_dir, 'slices')
+        os.makedirs(slices_dir, exist_ok=True)
+        slice_paths = []
+        
         for z in range(0, prediction.shape[0], 2):
             processed_slices = []
             
@@ -239,6 +267,18 @@ def create_quick_visualization(prediction, output_dir, images):
             
             combined = np.hstack(processed_slices)
             
+            # Save individual slice as PNG file
+            slice_filename = f'slice_{z:03d}.png'
+            slice_path = os.path.join(slices_dir, slice_filename)
+            plt.figure(figsize=(20, 4))
+            plt.imshow(combined)
+            plt.axis('off')
+            plt.title(f"Slice {z}", fontsize=14)
+            plt.tight_layout(pad=0)
+            plt.savefig(slice_path, bbox_inches='tight', pad_inches=0.1, dpi=100)
+            plt.close()
+            slice_paths.append(f'/media/results/{os.path.basename(output_dir)}/slices/{slice_filename}')
+            
             for _ in range(5):
                 frames.append(combined)
         
@@ -247,7 +287,8 @@ def create_quick_visualization(prediction, output_dir, images):
         gif_path = os.path.join(output_dir, 'animation.gif')
         imageio.mimsave(gif_path, frames, duration=2.0, loop=0)
         
-        print("Visualization completed successfully!")
+        print(f"Visualization completed successfully! Saved {len(slice_paths)} individual slices.")
+        return slice_paths
         
     except Exception as e:
         print(f"Error in visualization: {str(e)}")

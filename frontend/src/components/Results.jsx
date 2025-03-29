@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import ReportPDF from './ReportPDF';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowDownToLine, Loader2 } from 'lucide-react';
+import { ArrowDownToLine, Loader2, Eye, Grid3X3 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const GifPlayer = ({ src }) => {
@@ -42,6 +42,11 @@ const GifPlayer = ({ src }) => {
 const Results = () => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reportPreviewUrl, setReportPreviewUrl] = useState(null);
+  const [showReportPreview, setShowReportPreview] = useState(false);
+  const [showSliceGrid, setShowSliceGrid] = useState(false);
+  const [sliceImages, setSliceImages] = useState([]);
+  const [loadingSlices, setLoadingSlices] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -60,11 +65,126 @@ const Results = () => {
     }
   }, [location, navigate]);
 
+  useEffect(() => {
+    // Generate PDF preview when results are available
+    const generatePdfPreview = async () => {
+      if (results && currentUser) {
+        try {
+          const staticImageUrl = getCleanUrl(results.static_image);
+          const blob = await pdf(
+            <ReportPDF 
+              results={{
+                ...results,
+                static_image: staticImageUrl
+              }}
+              patientInfo={{
+                name: currentUser.displayName || 'Patient',
+                id: currentUser.uid.substring(0, 8),
+                referringPhysician: 'Self-referred'
+              }}
+            />
+          ).toBlob();
+          const url = URL.createObjectURL(blob);
+          setReportPreviewUrl(url);
+        } catch (err) {
+          console.error('Error generating PDF preview:', err);
+        }
+      }
+    };
+    
+    generatePdfPreview();
+    
+    // Clean up URL object on unmount
+    return () => {
+      if (reportPreviewUrl) {
+        URL.revokeObjectURL(reportPreviewUrl);
+      }
+    };
+  }, [results, currentUser]);
+
   const getCleanUrl = (url) => {
-    if (!url) return '';
-    const cleanPath = url.replace('http://localhost:8000', '');
-    return `http://localhost:8000${cleanPath}`;
+    if (!url) {
+      console.log("getCleanUrl: Empty URL provided");
+      return '';
+    }
+    
+    try {
+      // Log the original URL for debugging
+      console.log("Processing URL:", url);
+      
+      // Clean any localhost references
+      let cleanPath = url;
+      
+      // If it's already a relative path starting with /media
+      if (url.startsWith('/media')) {
+        cleanPath = url;
+      } 
+      // If it has localhost in it
+      else if (url.includes('localhost')) {
+        cleanPath = url.replace(/https?:\/\/localhost(:\d+)?/, '');
+      }
+      
+      // Ensure the path starts with http://localhost:8000 for proper loading
+      const finalUrl = `http://localhost:8000${cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath}`;
+      console.log("Final URL:", finalUrl);
+      return finalUrl;
+    } catch (err) {
+      console.error("Error cleaning URL:", err, url);
+      return url; // Return original if there's an error
+    }
   };
+
+  // New function to load individual slices
+  const loadSliceImages = async () => {
+    if (!results) {
+      setError('No results available');
+      return;
+    }
+    
+    setLoadingSlices(true);
+    setError(null);
+    
+    try {
+      // Check for slice_images field from backend (correct property name)
+      if (results.slice_images && Array.isArray(results.slice_images)) {
+        console.log("Found slice_images array:", results.slice_images);
+        const cleanUrls = results.slice_images.map(url => getCleanUrl(url));
+        setSliceImages(cleanUrls);
+      } 
+      // Fallback to slices if that's what's available
+      else if (results.slices && Array.isArray(results.slices)) {
+        console.log("Found slices array:", results.slices);
+        const cleanUrls = results.slices.map(url => getCleanUrl(url));
+        setSliceImages(cleanUrls);
+      }
+      // If no slice images data is available
+      else {
+        console.error("No slice images found in results:", results);
+        setError('Slice images not available in the results data');
+        setSliceImages([]);
+      }
+    } catch (err) {
+      console.error('Error loading slice images:', err);
+      setError('Failed to load slice images: ' + err.message);
+      setSliceImages([]);
+    } finally {
+      setLoadingSlices(false);
+    }
+  };
+
+  // Load slices when user toggles the grid view
+  useEffect(() => {
+    if (showSliceGrid && sliceImages.length === 0) {
+      loadSliceImages();
+    }
+  }, [showSliceGrid]);
+
+  // Also try to load slice images when results first become available
+  useEffect(() => {
+    if (results && !loading) {
+      loadSliceImages();
+    }
+  }, [results, loading]);
 
   if (loading) {
     return (
@@ -160,11 +280,10 @@ const Results = () => {
                 <p className="text-white text-sm">Active tumor regions</p>
               </div>
             </div>
-
           </div>
 
           {currentUser && (
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-8 gap-4 flex-wrap">
               <PDFDownloadLink
                 document={
                   <ReportPDF 
@@ -197,11 +316,104 @@ const Results = () => {
                   </>
                 )}
               </PDFDownloadLink>
+              
+              <button 
+                onClick={() => setShowReportPreview(!showReportPreview)} 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all"
+              >
+                {showReportPreview ? 'Hide Report' : 'View Report'}
+                <Eye strokeWidth={2} className="w-5 h-5" />
+              </button>
+              
+              <button 
+                onClick={() => setShowSliceGrid(!showSliceGrid)} 
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all"
+              >
+                {showSliceGrid ? 'Hide Slice Grid' : 'View Slice Grid'}
+                <Grid3X3 strokeWidth={2} className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+          
+          {showReportPreview && reportPreviewUrl && (
+            <div className="bg-white rounded-xl shadow-[0_0_12px_8px_#5C5C5C] p-4 md:p-6 mt-8">
+              <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-700 text-center">Report Preview</h2>
+              <div className="flex justify-center">
+                <iframe 
+                  src={reportPreviewUrl} 
+                  className="w-full h-[800px] border-2 border-gray-200 rounded-lg" 
+                  title="Report Preview"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* New Slice Grid Section */}
+          {showSliceGrid && (
+            <div className="bg-white rounded-xl shadow-[0_0_12px_8px_#5C5C5C] p-4 md:p-6 mt-8">
+              <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-700 text-center">Segmented Slices Grid</h2>
+              
+              {loadingSlices ? (
+                <div className="flex justify-center items-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-500">Loading slice images...</span>
+                </div>
+              ) : sliceImages.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {sliceImages.map((sliceUrl, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg overflow-hidden shadow-md">
+                      <img 
+                        src={sliceUrl} 
+                        alt={`Brain Scan Slice ${index + 1}`}
+                        className="w-full h-auto object-contain"
+                        loading="lazy"
+                        onError={(e) => {
+                          console.error(`Error loading slice image ${index}:`, sliceUrl);
+                          e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="14" text-anchor="middle" fill="%23999">Image Error</text></svg>';
+                          e.target.style.opacity = 0.5;
+                        }}
+                      />
+                      <div className="p-2 text-center text-sm text-gray-600">
+                        Slice {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="mb-4">
+                    {error || "No individual slice images available for this scan."}
+                  </div>
+                  
+                  {process.env.NODE_ENV !== 'production' && (
+                    <div className="mt-6 p-4 bg-gray-100 rounded text-left overflow-auto max-h-[300px] text-xs">
+                      <h4 className="font-semibold mb-2">Debug Info:</h4>
+                      <pre>
+                        {JSON.stringify(results ? {
+                          available_keys: Object.keys(results),
+                          has_slice_images: !!results.slice_images,
+                          slice_images_type: results.slice_images ? typeof results.slice_images : 'N/A',
+                          slice_images_length: results.slice_images && Array.isArray(results.slice_images) ? results.slice_images.length : 'N/A'
+                        } : 'No results', null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="mt-4 text-sm text-gray-600 text-center">
+                <p>These individual slices show the segmentation results across different cross-sections of the brain scan.</p>
+                <p className="mt-2 italic">Color legend: 
+                  <span className="text-red-600 ml-1">Red = Necrotic core,</span>
+                  <span className="text-yellow-500 ml-1">Yellow = Peritumoral edema,</span>
+                  <span className="text-green-600 ml-1">Green = GD-enhancing tumor</span>
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        {error && (
+        {error && !loadingSlices && (
           <div className="text-red-500 mt-4">
             Error: {error}
           </div>
