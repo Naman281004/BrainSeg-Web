@@ -38,6 +38,7 @@ class UserUpload(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     results = models.JSONField(null=True, blank=True)
     file_type = models.CharField(max_length=10, null=True, blank=True)
+    report_generated = models.BooleanField(default=False)
     status = models.CharField(
         max_length=100,
         choices=STATUS_CHOICES,

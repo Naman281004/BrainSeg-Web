@@ -115,7 +115,8 @@ def upload_file(request):
                     user_id=user_id,
                     email=email,
                     nifti_file=file,
-                    file_type=file_type
+                    file_type=file_type,
+                    report_generated=False
                 )
                 uploads.append(upload)
                 file_paths.append(upload.nifti_file.path)

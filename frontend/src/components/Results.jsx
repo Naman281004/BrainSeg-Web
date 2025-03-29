@@ -172,9 +172,14 @@ const Results = () => {
                       ...results,
                       static_image: staticImageUrl
                     }}
+                    patientInfo={{
+                      name: currentUser.displayName || 'Patient',
+                      id: currentUser.uid.substring(0, 8),
+                      referringPhysician: 'Self-referred'
+                    }}
                   />
                 }
-                fileName={`brain-segmentation-report-${new Date().toISOString()}.pdf`}
+                fileName={`brain-segmentation-report-${new Date().toISOString().split('T')[0]}.pdf`}
                 className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all"
               >
                 {({ loading: pdfLoading, error }) => (
