@@ -106,12 +106,11 @@ def process_brain_scans(file_paths, output_dir):
                 prediction = torch.argmax(seg_out, dim=1).cpu().numpy()[0]
         
         update_progress(upload_obj, 90, "Creating visualizations")
-        slice_paths = create_quick_visualization(prediction, output_dir, images)
+        create_quick_visualization(prediction, output_dir, images)
         
         results = {
             'static_image': f'/media/results/{os.path.basename(output_dir)}/preview.png',
             'gif': f'/media/results/{os.path.basename(output_dir)}/animation.gif',
-            'slice_images': slice_paths,  # Add slice paths to results
             'metrics': calculate_metrics(prediction),
             'timestamp': time.time(),
             'progress': 100,
@@ -218,7 +217,16 @@ def create_quick_visualization(prediction, output_dir, images):
     try:
         print("\nCreating visualization...")
         
-        slice_idx = prediction.shape[0] // 2
+        # Find the slice with the most tumor pixels (non-background voxels)
+        tumor_pixels_by_slice = []
+        for z in range(prediction.shape[0]):
+            # Count non-background voxels (any value > 0 represents tumor)
+            tumor_pixels = np.sum(prediction[:, :, z] > 0)
+            tumor_pixels_by_slice.append(tumor_pixels)
+        
+        # Get the slice with the maximum tumor presence
+        slice_idx = np.argmax(tumor_pixels_by_slice)
+        print(f"Selected slice {slice_idx} with {tumor_pixels_by_slice[slice_idx]} tumor pixels")
         
         fig, axes = plt.subplots(1, 5, figsize=(20, 4))
         
@@ -246,15 +254,6 @@ def create_quick_visualization(prediction, output_dir, images):
         frames = []
         print("Creating animated visualization...")
         
-        # Create directory for individual slices
-        slices_dir = os.path.join(output_dir, 'slices')
-        os.makedirs(slices_dir, exist_ok=True)
-        slice_paths = []
-        
-        # Create a figure once for the slices
-        plt.figure(figsize=(6, 6))
-        
-        # Process each slice
         for z in range(0, prediction.shape[0], 2):
             processed_slices = []
             
@@ -265,44 +264,21 @@ def create_quick_visualization(prediction, output_dir, images):
                 rgb_slice = np.stack([normalized] * 3, axis=-1)
                 processed_slices.append(rgb_slice)
             
-            # Generate colored segmentation
             seg_slice = prediction[:, :, z]
             colored_seg = (seg_cmap(seg_slice.astype(int))[:, :, :3] * 255).astype(np.uint8)
             processed_slices.append(colored_seg)
             
-            # Stack all modalities horizontally for animation
             combined = np.hstack(processed_slices)
             
-            # Save individual slice as PNG file (full composite)
-            slice_filename = f'slice_{z:03d}.png'
-            slice_path = os.path.join(slices_dir, slice_filename)
-            
-            # Only save the segmentation part (NOT the full composite)
-            seg_filename = f'seg_{z:03d}.png'
-            seg_path = os.path.join(slices_dir, seg_filename)
-            
-            # Create a clean figure for just the segmentation
-            plt.clf()  # Clear the figure
-            plt.imshow(colored_seg)
-            plt.axis('off')
-            plt.tight_layout(pad=0)
-            plt.savefig(seg_path, bbox_inches='tight', pad_inches=0, dpi=100)
-            
-            # Add path to the segmentation-only image
-            slice_paths.append(f'/media/results/{os.path.basename(output_dir)}/slices/{seg_filename}')
-            
-            # Use the combined image for animation frames
             for _ in range(5):
                 frames.append(combined)
         
-        plt.close()  # Close the figure
         frames.extend(frames[::-1])
         
         gif_path = os.path.join(output_dir, 'animation.gif')
         imageio.mimsave(gif_path, frames, duration=2.0, loop=0)
         
-        print(f"Visualization completed successfully! Saved {len(slice_paths)} individual segmentation slices.")
-        return slice_paths
+        print("Visualization completed successfully!")
         
     except Exception as e:
         print(f"Error in visualization: {str(e)}")

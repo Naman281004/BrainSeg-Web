@@ -14,11 +14,16 @@ import Contact from './components/Contact'
 import ReportsHistory from './components/ReportsHistory'
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import Blog from './components/Blog';
+import FAQs from './components/FAQs';
+import ResearchPapers from './components/ResearchPapers';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster position="top-center" />
         <div className="flex flex-col min-h-screen">
           <Navbar />
@@ -26,6 +31,9 @@ function App() {
             <Routes>
               <Route path="/" element={<HeroSection />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/faqs" element={<FAQs />} />
+              <Route path="/research-papers" element={<ResearchPapers />} />
 
               <Route path="/signin" element={
                 <PublicRoute>
