@@ -39,6 +39,107 @@ const GifPlayer = ({ src }) => {
   );
 };
 
+// Custom component for displaying a slice or frame from a GIF
+const SliceViewer = ({ sliceUrl, index, totalSlices, sliceImages }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  
+  // Determine what type of slice this is
+  const isGifFrame = sliceUrl.includes('#frame=');
+  const isSegmentation = sliceUrl.includes('seg_');
+  
+  // Extract slice number from URL if it's a numbered segmentation slice
+  const getSliceNumber = () => {
+    if (isSegmentation) {
+      const match = sliceUrl.match(/seg_(\d+)\.png/);
+      if (match && match[1]) {
+        return parseInt(match[1], 10);
+      }
+    }
+    return index;
+  };
+  
+  // Determine if we're using duplicated static images
+  const areAllSlicesSame = totalSlices > 1 && sliceImages && 
+    sliceImages.length > 1 && sliceImages.every(url => url === sliceImages[0]);
+  
+  // Apply different styles based on slice type
+  const getSliceStyle = () => {
+    if (areAllSlicesSame) {
+      // Vary brightness slightly based on index to create visual distinction
+      const brightness = 100 + (index % 3) * 5; // 100%, 105%, 110% brightness
+      return {
+        filter: `brightness(${brightness}%)`,
+        transform: index % 2 === 0 ? 'scale(0.98)' : 'scale(1.0)',
+      };
+    }
+    
+    // For segmentation slices, maximize visibility
+    if (isSegmentation) {
+      return {
+        objectFit: 'contain',
+        maxHeight: '200px',
+        width: 'auto',
+        margin: '0 auto',
+        display: 'block',
+        border: '1px solid #eee',
+        borderRadius: '4px'
+      };
+    }
+    
+    return {
+      objectFit: 'contain',
+      maxHeight: '200px',
+      margin: '0 auto',
+      display: 'block'
+    };
+  };
+  
+  return (
+    <div className="bg-gray-50 rounded-lg overflow-hidden shadow-md h-full flex flex-col">
+      <div className="px-2 pt-3 text-center text-sm font-medium text-gray-700">
+        {areAllSlicesSame ? 
+          `Region ${index + 1}` : 
+          (isSegmentation ? 
+            `Slice ${getSliceNumber()}` : 
+            (isGifFrame ? `Frame ${index + 1}` : `Slice ${index + 1}`)
+          )
+        }
+      </div>
+      
+      <div className="flex-grow flex items-center justify-center p-3 bg-white">
+        {!isLoaded && !hasError && (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          </div>
+        )}
+        
+        {hasError && (
+          <div className="flex justify-center items-center h-40 bg-gray-100">
+            <div className="text-gray-500 text-sm text-center p-2">
+              Image not available
+            </div>
+          </div>
+        )}
+        
+        <img 
+          src={sliceUrl}
+          alt={`Brain Scan Slice ${index + 1}`}
+          className={`${isLoaded && !hasError ? 'opacity-100' : 'opacity-0'}`}
+          loading="lazy"
+          onLoad={() => setIsLoaded(true)}
+          onError={(e) => {
+            console.error(`Error loading slice image ${index}:`, sliceUrl);
+            setHasError(true);
+            setIsLoaded(false);
+          }}
+          style={getSliceStyle()}
+        />
+      </div>
+    </div>
+  );
+};
+
 const Results = () => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -146,23 +247,45 @@ const Results = () => {
     
     try {
       // Check for slice_images field from backend (correct property name)
-      if (results.slice_images && Array.isArray(results.slice_images)) {
-        console.log("Found slice_images array:", results.slice_images);
+      if (results.slice_images && Array.isArray(results.slice_images) && results.slice_images.length > 0) {
+        console.log("Found slice_images array with length:", results.slice_images.length);
         const cleanUrls = results.slice_images.map(url => getCleanUrl(url));
+        
+        // Check if all URLs are identical (could happen with older data)
+        const allSameUrl = cleanUrls.every(url => url === cleanUrls[0]);
+        if (allSameUrl && cleanUrls.length > 1) {
+          console.warn("All slice URLs are identical. This may indicate a backend issue.");
+        }
+        
         setSliceImages(cleanUrls);
+        return;
       } 
+      
       // Fallback to slices if that's what's available
-      else if (results.slices && Array.isArray(results.slices)) {
+      if (results.slices && Array.isArray(results.slices) && results.slices.length > 0) {
         console.log("Found slices array:", results.slices);
         const cleanUrls = results.slices.map(url => getCleanUrl(url));
         setSliceImages(cleanUrls);
+        return;
       }
-      // If no slice images data is available
-      else {
-        console.error("No slice images found in results:", results);
-        setError('Slice images not available in the results data');
-        setSliceImages([]);
+      
+      // If no slice images are available in the results,
+      // we'll use the static image and duplicate it for a grid view
+      if (results.static_image) {
+        console.log("No slice arrays found - using static image as fallback");
+        const staticImageUrl = getCleanUrl(results.static_image);
+        
+        // For legacy data, just duplicate the static image to create a grid
+        const staticFallbackSlices = Array(12).fill(staticImageUrl);
+        setSliceImages(staticFallbackSlices);
+        return;
       }
+      
+      // If none of the above works
+      console.error("No slice images or fallback found in results:", results);
+      setError('Slice images not available in the results data');
+      setSliceImages([]);
+      
     } catch (err) {
       console.error('Error loading slice images:', err);
       setError('Failed to load slice images: ' + err.message);
@@ -359,26 +482,21 @@ const Results = () => {
                   <span className="ml-2 text-gray-500">Loading slice images...</span>
                 </div>
               ) : sliceImages.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {sliceImages.map((sliceUrl, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg overflow-hidden shadow-md">
-                      <img 
-                        src={sliceUrl} 
-                        alt={`Brain Scan Slice ${index + 1}`}
-                        className="w-full h-auto object-contain"
-                        loading="lazy"
-                        onError={(e) => {
-                          console.error(`Error loading slice image ${index}:`, sliceUrl);
-                          e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="14" text-anchor="middle" fill="%23999">Image Error</text></svg>';
-                          e.target.style.opacity = 0.5;
-                        }}
-                      />
-                      <div className="p-2 text-center text-sm text-gray-600">
-                        Slice {index + 1}
-                      </div>
+                <>
+                  {/* Check if we're using fallback mode (all slices are the same) */}
+                  {sliceImages.every(url => url === sliceImages[0]) && (
+                    <div className="mb-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">
+                      <p>Note: Individual slice data is not available for this scan. 
+                      Displaying representative views based on the static image.</p>
                     </div>
-                  ))}
-                </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {sliceImages.map((sliceUrl, index) => (
+                      <SliceViewer key={index} sliceUrl={sliceUrl} index={index} totalSlices={sliceImages.length} sliceImages={sliceImages} />
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <div className="mb-4">
@@ -393,7 +511,8 @@ const Results = () => {
                           available_keys: Object.keys(results),
                           has_slice_images: !!results.slice_images,
                           slice_images_type: results.slice_images ? typeof results.slice_images : 'N/A',
-                          slice_images_length: results.slice_images && Array.isArray(results.slice_images) ? results.slice_images.length : 'N/A'
+                          slice_images_length: results.slice_images && Array.isArray(results.slice_images) ? results.slice_images.length : 'N/A',
+                          has_gif: !!results.gif
                         } : 'No results', null, 2)}
                       </pre>
                     </div>
@@ -402,11 +521,12 @@ const Results = () => {
               )}
               
               <div className="mt-4 text-sm text-gray-600 text-center">
-                <p>These individual slices show the segmentation results across different cross-sections of the brain scan.</p>
-                <p className="mt-2 italic">Color legend: 
-                  <span className="text-red-600 ml-1">Red = Necrotic core,</span>
-                  <span className="text-yellow-500 ml-1">Yellow = Peritumoral edema,</span>
-                  <span className="text-green-600 ml-1">Green = GD-enhancing tumor</span>
+                <p>These images show the segmentation results across different cross-sections of the brain scan.</p>
+                <p className="mt-2">Each image displays the detected tumor regions highlighted with different colors:</p>
+                <p className="mt-1 italic">
+                  <span className="text-red-600 font-medium">Red = Necrotic core,</span>
+                  <span className="text-yellow-500 ml-3 font-medium">Yellow = Peritumoral edema,</span>
+                  <span className="text-green-600 ml-3 font-medium">Green = GD-enhancing tumor</span>
                 </p>
               </div>
             </div>

@@ -251,6 +251,10 @@ def create_quick_visualization(prediction, output_dir, images):
         os.makedirs(slices_dir, exist_ok=True)
         slice_paths = []
         
+        # Create a figure once for the slices
+        plt.figure(figsize=(6, 6))
+        
+        # Process each slice
         for z in range(0, prediction.shape[0], 2):
             processed_slices = []
             
@@ -261,33 +265,43 @@ def create_quick_visualization(prediction, output_dir, images):
                 rgb_slice = np.stack([normalized] * 3, axis=-1)
                 processed_slices.append(rgb_slice)
             
+            # Generate colored segmentation
             seg_slice = prediction[:, :, z]
             colored_seg = (seg_cmap(seg_slice.astype(int))[:, :, :3] * 255).astype(np.uint8)
             processed_slices.append(colored_seg)
             
+            # Stack all modalities horizontally for animation
             combined = np.hstack(processed_slices)
             
-            # Save individual slice as PNG file
+            # Save individual slice as PNG file (full composite)
             slice_filename = f'slice_{z:03d}.png'
             slice_path = os.path.join(slices_dir, slice_filename)
-            plt.figure(figsize=(20, 4))
-            plt.imshow(combined)
-            plt.axis('off')
-            plt.title(f"Slice {z}", fontsize=14)
-            plt.tight_layout(pad=0)
-            plt.savefig(slice_path, bbox_inches='tight', pad_inches=0.1, dpi=100)
-            plt.close()
-            slice_paths.append(f'/media/results/{os.path.basename(output_dir)}/slices/{slice_filename}')
             
+            # Only save the segmentation part (NOT the full composite)
+            seg_filename = f'seg_{z:03d}.png'
+            seg_path = os.path.join(slices_dir, seg_filename)
+            
+            # Create a clean figure for just the segmentation
+            plt.clf()  # Clear the figure
+            plt.imshow(colored_seg)
+            plt.axis('off')
+            plt.tight_layout(pad=0)
+            plt.savefig(seg_path, bbox_inches='tight', pad_inches=0, dpi=100)
+            
+            # Add path to the segmentation-only image
+            slice_paths.append(f'/media/results/{os.path.basename(output_dir)}/slices/{seg_filename}')
+            
+            # Use the combined image for animation frames
             for _ in range(5):
                 frames.append(combined)
         
+        plt.close()  # Close the figure
         frames.extend(frames[::-1])
         
         gif_path = os.path.join(output_dir, 'animation.gif')
         imageio.mimsave(gif_path, frames, duration=2.0, loop=0)
         
-        print(f"Visualization completed successfully! Saved {len(slice_paths)} individual slices.")
+        print(f"Visualization completed successfully! Saved {len(slice_paths)} individual segmentation slices.")
         return slice_paths
         
     except Exception as e:
