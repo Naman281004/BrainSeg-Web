@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import logo from "../assets/image.jpg";
 import { toast } from 'react-hot-toast';
-import { scrollToTop } from './ScrollToTop';
 
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
@@ -63,10 +62,7 @@ const Navbar = () => {
                     <Link
                       to="/"
                       className="block px-4 py-5 text-xl font-bold text-white hover:bg-custom-blue transition-colors duration-800"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        scrollToTop();
-                      }}
+                      onClick={() => setIsDropdownOpen(false)}
                     >
                       Home Page
                     </Link>
@@ -75,10 +71,7 @@ const Navbar = () => {
                     <Link
                       to="/upload"
                       className="block px-4 py-5 text-xl font-bold text-white hover:bg-custom-blue transition-colors duration-800"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        scrollToTop();
-                      }}
+                      onClick={() => setIsDropdownOpen(false)}
                     >
                       Upload
                     </Link>
@@ -88,10 +81,7 @@ const Navbar = () => {
                       to="/reports"
                       className="block px-4 py-5 text-xl font-bold text-white
                       hover:bg-custom-blue transition-colors duration-800"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        scrollToTop();
-                      }}
+                      onClick={() => setIsDropdownOpen(false)}
                     >
                       Reports
                     </Link>
@@ -100,10 +90,7 @@ const Navbar = () => {
                     to="/faqs"
                     className="block px-4 py-5 text-xl font-bold text-white 
                     hover:bg-custom-blue transition-colors duration-800"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      scrollToTop();
-                    }}
+                    onClick={() => setIsDropdownOpen(false)}
                   >
                     FAQs
                   </Link>
@@ -111,10 +98,7 @@ const Navbar = () => {
                     to="/blog"
                     className="block px-4 py-5 text-xl font-bold text-white 
                     hover:bg-custom-blue transition-colors duration-800"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      scrollToTop();
-                    }}
+                    onClick={() => setIsDropdownOpen(false)}
                   >
                     Blog
                   </Link>
@@ -122,10 +106,7 @@ const Navbar = () => {
                     to="/research-papers"
                     className="block px-4 py-5 text-xl font-bold text-white 
                     hover:bg-custom-blue transition-colors duration-800"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      scrollToTop();
-                    }}
+                    onClick={() => setIsDropdownOpen(false)}
                   >
                     Research Papers
                   </Link>
@@ -133,10 +114,7 @@ const Navbar = () => {
                     to="/contact"
                     className="block px-4 py-5 text-xl font-bold text-white 
                     hover:bg-custom-blue transition-colors duration-800"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      scrollToTop();
-                    }}
+                    onClick={() => setIsDropdownOpen(false)}
                   >
                     Contact Us
                   </Link>
