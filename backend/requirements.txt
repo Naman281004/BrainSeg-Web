@@ -1,0 +1,12 @@
+Django
+django-cors-headers
+djangorestframework
+numpy
+torch
+nibabel
+matplotlib
+imageio
+Pillow
+python-dotenv
+firebase-admin
+psycopg2-binary

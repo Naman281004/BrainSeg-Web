@@ -1,0 +1,22 @@
+# Environment & Firebase
+.env
+.env.local
+.env.*.local
+firebase-adminsdk*.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Database & Media
+db.sqlite3
+media/
+
+# Node
+node_modules/
+dist/
+
+# Model files
+*.pth
+backend/CODE_BRAINSEG/UNET_for_Multimodal_Semantic_Segmentation/*.pth
