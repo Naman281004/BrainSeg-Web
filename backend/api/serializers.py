@@ -22,18 +22,12 @@ class UserUploadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if instance.results:
-            request = self.context.get('request')
-            if request:
-                scheme = 'https' if request.is_secure() or request.headers.get('X-Forwarded-Proto') == 'https' else 'http'
-                host = request.get_host()
-                base_url = f"{scheme}://{host}"
-            else:
-                base_url = ''
-
+            base_url = 'http://localhost:8000'  
             results = instance.results
-            if 'static_image' in results and results.get('static_image', '').startswith('/media'):
+            if 'static_image' in results and not results['static_image'].startswith('http'):
+
                 results['static_image'] = base_url + results['static_image']
-            if 'gif' in results and results.get('gif', '').startswith('/media'):
+            if 'gif' in results and not results['gif'].startswith('http'):
                 results['gif'] = base_url + results['gif']
             representation['results'] = results
         return representation

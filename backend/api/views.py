@@ -10,6 +10,7 @@ from .models import UserUpload, ProcessedResult
 from .serializers import UserUploadSerializer, ProcessedResultSerializer
 import os
 from django.conf import settings
+from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from firebase_admin import auth
 from django.core.cache import cache
@@ -18,6 +19,7 @@ import threading
 import time
 from django.db import models
 from django.core.files.storage import FileSystemStorage
+
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -42,21 +44,17 @@ def background_processor():
         with processing_lock:
             if processing_queue:
                 task = processing_queue.pop(0)
-                upload = task['upload']
                 try:
-                    upload.status = 'loading_model'
-                    upload.save()
-
-                    # Lazy load the heavy processing function
-                    from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
            
-                    output_dir = os.path.join(settings.MEDIA_ROOT, 'results', str(upload.batch_id))
+                    output_dir = os.path.join(settings.MEDIA_ROOT, 'results', str(task['upload'].batch_id))
                     os.makedirs(output_dir, exist_ok=True)
                     
+             
+                    upload = task['upload']
                     upload.status = 'processing'
                     upload.save()
                
-                    results = process_brain_scans(task['file_paths'], output_dir, upload)
+                    results = process_brain_scans(task['file_paths'], output_dir)
         
                     upload.results = results
                     upload.status = 'complete'
@@ -75,22 +73,16 @@ processor_thread.start()
 @permission_classes([AllowAny])
 def upload_file(request):
     try:
-        is_demo = request.data.get('is_demo') == 'true'
         files = request.FILES.getlist('nifti_files')
         
-        if is_demo:
-            user_id = 'demo_user'
-            email = 'demo@example.com'
-            print("\n=== Starting DEMO File Upload Processing (Async) ===")
-        else:
-            user_id = request.data.get('user_id')
-            email = request.data.get('email')
-            print("\n=== Starting File Upload Processing ===")
+        user_id = request.data.get('user_id')
+        email = request.data.get('email')
+        print("\n=== Starting File Upload Processing ===")
 
         print(f"Number of files received: {len(files)}")
         print(f"User ID: {user_id}")
         
-        if not is_demo and not all([user_id, email]):
+        if not all([user_id, email]):
             return Response(
                 {'error': 'User authentication details are missing.'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -133,10 +125,6 @@ def upload_file(request):
                 'upload': uploads[0],
             })
         
-        # Set initial status to 'queued'
-        uploads[0].status = 'queued'
-        uploads[0].save()
-
         return Response({
             'message': 'Processing started',
             'status_url': f'/api/status/{uploads[0].id}/'
@@ -157,11 +145,10 @@ def upload_file(request):
 def processing_status(request, upload_id):
     try:
         upload = UserUpload.objects.get(id=upload_id)
-        serializer = UserUploadSerializer(upload, context={'request': request})
         return Response({
-            'status': serializer.data['status'],
-            'result': serializer.data['results'],
-            'error': serializer.data['error_message']
+            'status': upload.status,
+            'result': upload.results,
+            'error': upload.error_message if hasattr(upload, 'error_message') else None
         })
     except UserUpload.DoesNotExist:
         return Response({'error': 'Upload not found'}, status=404)
@@ -170,7 +157,7 @@ def processing_status(request, upload_id):
 def get_results(request, user_id):
     try:
         uploads = UserUpload.objects.filter(user_id=user_id)
-        serializer = UserUploadSerializer(uploads, many=True, context={'request': request})
+        serializer = UserUploadSerializer(uploads, many=True)
         return Response(serializer.data)
     except Exception as e:
         return Response(
@@ -212,7 +199,7 @@ def get_user_reports(request, user_id):
         
         print(f"Found {len(reports)} unique reports")
         
-        serializer = UserUploadSerializer(reports, many=True, context={'request': request})
+        serializer = UserUploadSerializer(reports, many=True)
         return Response(serializer.data)
         
     except Exception as e:
@@ -222,4 +209,5 @@ def get_user_reports(request, user_id):
         return Response(
             {'error': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        ) 
+        )
+

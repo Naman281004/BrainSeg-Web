@@ -48,7 +48,6 @@ const Results = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [error, setError] = useState(null);
-  const isDemo = location.state?.is_demo;
 
   useEffect(() => {
     if (!location.state?.results) {
@@ -65,23 +64,21 @@ const Results = () => {
 
   useEffect(() => {
     const generatePdfPreview = async () => {
-      if (results && (currentUser || isDemo)) {
+      if (results && currentUser) {
         try {
-          const patientInfo = currentUser
-            ? {
-                name: currentUser.displayName || 'Patient',
-                id: currentUser.uid.substring(0, 8),
-                referringPhysician: 'Self-referred'
-              }
-            : {
-                name: 'Demo Patient',
-                id: 'DEMO-001',
-                referringPhysician: 'N/A'
-              };
+          const staticImageUrl = getCleanUrl(results.static_image);
+          const patientInfo = {
+            name: currentUser.displayName || 'Patient',
+            id: currentUser.uid.substring(0, 8),
+            referringPhysician: 'Self-referred'
+          };
 
           const blob = await pdf(
-            <ReportPDF
-              results={results}
+            <ReportPDF 
+              results={{
+                ...results,
+                static_image: staticImageUrl
+              }}
               patientInfo={patientInfo}
             />
           ).toBlob();
@@ -92,15 +89,21 @@ const Results = () => {
         }
       }
     };
-
+    
     generatePdfPreview();
-
+    
     return () => {
       if (reportPreviewUrl) {
         URL.revokeObjectURL(reportPreviewUrl);
       }
     };
-  }, [results, currentUser, isDemo]);
+  }, [results, currentUser]);
+
+  const getCleanUrl = (url) => {
+    if (!url) return '';
+    const cleanPath = url.replace('http://localhost:8000', '');
+    return `http://localhost:8000${cleanPath}`;
+  };
 
   if (loading) {
     return (
@@ -123,8 +126,8 @@ const Results = () => {
     );
   }
 
-  const staticImageUrl = results.static_image;
-  const gifUrl = results.gif;
+  const staticImageUrl = getCleanUrl(results.static_image);
+  const gifUrl = getCleanUrl(results.gif);
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
@@ -198,24 +201,20 @@ const Results = () => {
             </div>
           </div>
 
-          {(currentUser || isDemo) && (
+          {currentUser && (
             <div className="flex justify-center mt-8 gap-4">
               <PDFDownloadLink
                 document={
-                  <ReportPDF
-                    results={results}
-                    patientInfo={currentUser
-                      ? {
-                          name: currentUser.displayName || 'Patient',
-                          id: currentUser.uid.substring(0, 8),
-                          referringPhysician: 'Self-referred'
-                        }
-                      : {
-                          name: 'Demo Patient',
-                          id: 'DEMO-001',
-                          referringPhysician: 'N/A'
-                        }
-                    }
+                  <ReportPDF 
+                    results={{
+                      ...results,
+                      static_image: staticImageUrl
+                    }}
+                    patientInfo={{
+                      name: currentUser.displayName || 'Patient',
+                      id: currentUser.uid.substring(0, 8),
+                      referringPhysician: 'Self-referred'
+                    }}
                   />
                 }
                 fileName={`brain-segmentation-report-${new Date().toISOString().split('T')[0]}.pdf`}

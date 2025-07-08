@@ -15,11 +15,6 @@ import sys
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
-import dj_database_url
-import base64
-import json
-import firebase_admin
-from firebase_admin import credentials
 
 # Load environment variables
 load_dotenv()
@@ -30,21 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add CODE_BRAINSEG to Python path
 sys.path.append(str(BASE_DIR))
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-
-# Add Render.com URL to allowed hosts
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+ALLOWED_HOSTS = ["*"]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
@@ -74,9 +61,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -111,27 +97,15 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
-}
-
-# Firebase configuration
-firebase_credentials_base64 = os.environ.get('FIREBASE_CREDENTIALS_BASE64')
-if firebase_credentials_base64:
-    firebase_credentials_json = base64.b64decode(firebase_credentials_base64).decode('utf-8')
-    firebase_credentials = json.loads(firebase_credentials_json)
-    cred = credentials.Certificate(firebase_credentials)
-    firebase_admin.initialize_app(cred)
-else:
-    # Local development: use the JSON file
-    FIREBASE_APP_NAME = 'BrainSeg'
-    SERVICE_ACCOUNT_KEY_PATH = os.path.join(BASE_DIR, '..', 'serviceAccountKey.json')
-    if os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
-        cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
-        firebase_admin.initialize_app(cred, {
-            'storageBucket': f'{FIREBASE_APP_NAME}.appspot.com'
-        })
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'BrainDB'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+} 
 
 
 # Password validation
@@ -169,38 +143,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Following settings only make sense on production and may break development environments.
-if not DEBUG:
-    # Turn on WhiteNoise storage backend that takes care of compressing static files
-    # and creating unique names for each version so they can be safely cached forever.
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Trust the X-Forwarded-Host and X-Forwarded-Proto headers from the proxy
-USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/tmp/media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Create the media directories
+os.makedirs(os.path.join(MEDIA_ROOT, 'results'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'uploads'), exist_ok=True)
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-
-# Add the Render frontend URL when it's available
-RENDER_FRONTEND_URL = os.environ.get('RENDER_FRONTEND_URL')
-if RENDER_FRONTEND_URL:
-    CORS_ALLOWED_ORIGINS.append(RENDER_FRONTEND_URL)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -225,6 +186,6 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# The following are not needed if CORS_ALLOWED_ORIGINS is set
-# CORS_ALLOW_ALL_ORIGINS = True 
-# CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+# Add to your existing CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']

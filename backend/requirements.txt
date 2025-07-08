@@ -1,20 +1,12 @@
---index-url https://download.pytorch.org/whl/cpu
---extra-index-url https://pypi.python.org/simple/
-torch==2.3.0
-
-Django==4.2.13
-django-cors-headers==4.3.1
-djangorestframework==3.15.1
-djangorestframework-simplejwt==5.3.1
-numpy==1.26.4
-nibabel==5.2.1
-matplotlib==3.8.4
-imageio==2.34.1
-Pillow==10.3.0
-python-dotenv==1.0.1
-firebase-admin==6.5.0
-psycopg2-binary==2.9.9
-gunicorn==22.0.0
-whitenoise==6.7.0
-dj-database-url==2.1.0
-gdown==5.2.0
+Django
+django-cors-headers
+djangorestframework
+numpy
+torch
+nibabel
+matplotlib
+imageio
+Pillow
+python-dotenv
+firebase-admin
+psycopg2-binary
