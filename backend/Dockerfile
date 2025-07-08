@@ -26,4 +26,4 @@ EXPOSE 8000
 # Run the application
 # We use --workers=1 to conserve memory, even with 16GB available it's good practice
 # We bind to 0.0.0.0 to allow external connections
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers=1"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "300", "backend.wsgi:application"] 
