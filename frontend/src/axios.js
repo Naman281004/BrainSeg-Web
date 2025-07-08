@@ -8,7 +8,7 @@ const baseURL = import.meta.env.PROD
 
 const axiosInstance = axios.create({
   baseURL: baseURL,  
-  timeout: 30000,
+  timeout: 300000,
   withCredentials: false,
 });
 
