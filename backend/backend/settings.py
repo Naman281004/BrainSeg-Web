@@ -183,6 +183,10 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Trust the X-Forwarded-Host and X-Forwarded-Proto headers from the proxy
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/tmp/media'
