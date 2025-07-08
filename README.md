@@ -1,6 +1,10 @@
 # BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
-![BrainSeg Banner](./screenshots/Screenshot%202025-07-08%20175706.png)
+<p align="center">
+  <img src="./screenshots/Screenshot%202025-07-08%20175706.png"  />
+  <img src="./screenshots/Screenshot%202025-07-08%20175712.png"  />
+  <img src="./screenshots/Screenshot%202025-07-08%20175718.png"  />
+</p>
 
 **Live Demo:** [**Explore the App**](http://your-live-demo-url.com)
 
@@ -21,11 +25,11 @@ BrainSeg is an advanced web application that leverages a deep learning model to 
 
 ## Screenshots
 
-|                  Login Page                   |                  Upload Interface                  |
-| :-------------------------------------------: | :----------------------------------------------: |
-| ![Login Page](./screenshots/Screenshot%202025-07-08%20175712.png) | ![Upload Page](./screenshots/Screenshot%202025-07-08%20175718.png) |
-|                **Results View**                 |                **PDF Report**                |
-| ![Results Page](./screenshots/Screenshot%202025-07-08%20175725.png) | ![PDF Report](./screenshots/Screenshot%202025-07-08%20175831.png) |
+| Upload Interface | Backend Processing | Segmentation Results |
+| :---: | :---: | :---: |
+| ![Upload Page](./screenshots/Screenshot%202025-07-08%20180007.png) | ![Processing](./screenshots/Screenshot%202025-07-08%20180016.png) | ![Results Page](./screenshots/Screenshot%202025-07-08%20180038.png) |
+| **PDF Report** | **Report History** | |
+| ![PDF Report](./screenshots/Screenshot%202025-07-08%20180056.png) | ![Report History](./screenshots/Screenshot%202025-07-08%20180125.png) | |
 
 
 ## Technology Stack
