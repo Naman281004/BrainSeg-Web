@@ -1,6 +1,6 @@
 # BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
-![BrainSeg Banner](path/to/your/banner-image.png)
+![BrainSeg Banner](./screenshots/Screenshot%202025-07-08%20175706.png)
 
 **Live Demo:** [**Explore the App**](http://your-live-demo-url.com)
 
@@ -23,9 +23,9 @@ BrainSeg is an advanced web application that leverages a deep learning model to 
 
 |                  Login Page                   |                  Upload Interface                  |
 | :-------------------------------------------: | :----------------------------------------------: |
-| ![Login Page](path/to/your/login-screenshot.png) | ![Upload Page](path/to/your/upload-screenshot.png) |
+| ![Login Page](./screenshots/Screenshot%202025-07-08%20175712.png) | ![Upload Page](./screenshots/Screenshot%202025-07-08%20175718.png) |
 |                **Results View**                 |                **PDF Report**                |
-| ![Results Page](path/to/your/results-screenshot.png) | ![PDF Report](path/to/your/report-screenshot.png) |
+| ![Results Page](./screenshots/Screenshot%202025-07-08%20175725.png) | ![PDF Report](./screenshots/Screenshot%202025-07-08%20175831.png) |
 
 
 ## Technology Stack
