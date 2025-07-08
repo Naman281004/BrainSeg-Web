@@ -23,7 +23,13 @@ class UserUploadSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         if instance.results:
             request = self.context.get('request')
-            base_url = request.build_absolute_uri('/')[:-1] if request else ''
+            if request:
+                scheme = 'https' if request.is_secure() or request.headers.get('X-Forwarded-Proto') == 'https' else 'http'
+                host = request.get_host()
+                base_url = f"{scheme}://{host}"
+            else:
+                base_url = ''
+
             results = instance.results
             if 'static_image' in results and results.get('static_image', '').startswith('/media'):
                 results['static_image'] = base_url + results['static_image']
