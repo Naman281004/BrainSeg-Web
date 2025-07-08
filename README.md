@@ -9,7 +9,7 @@
   <img src="./screenshots/Screenshot%202025-07-08%20175718.png"  />
 </p>
 
-#video demo
+# project walkthrough
 <p align="center">
 <img src="./screenshots/Recording-2025-07-09-022504.gif" alt="BrainSeg Application Demo"/>
 </p>
