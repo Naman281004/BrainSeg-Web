@@ -143,9 +143,12 @@ const Upload = () => {
     };
 
     const statusMessages = {
-        'queued': 'Your request is in the queue. Preparing to process...',
-        'loading_model': 'Loading segmentation model. This may take a moment...',
-        'processing': 'Model loaded. Processing brain scans...',
+        'queued': 'Your request is in the queue...',
+        'loading_model': 'Loading segmentation model... (This may take a moment)',
+        'loading_data': 'Loading brain scan data...',
+        'processing_scans': 'Processing scans...',
+        'running_inference': 'Running model inference...',
+        'creating_visualizations': 'Creating result visualizations...',
         'default': 'Processing... please wait.'
     };
 

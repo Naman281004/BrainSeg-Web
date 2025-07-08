@@ -61,30 +61,22 @@ def calculate_metrics(prediction, ground_truth=None):
 
 def process_brain_scans(file_paths, output_dir, upload_obj=None):
     try:
-        def update_progress(upload_obj, progress, status_message):
+        def update_status(upload_obj, status_message):
             if upload_obj:
-                upload_obj.status = 'processing'
-                upload_obj.results = {
-                    'progress': progress,
-                    'status': status_message,
-                    'processing_status': status_message
-                }
+                upload_obj.status = status_message
                 upload_obj.save()
 
-        if upload_obj:
-            update_progress(upload_obj, 20, "Loading model")
-
+        update_status(upload_obj, "loading_model")
+        
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        if upload_obj:
-            update_progress(upload_obj, 40, "Loading data")
+        update_status(upload_obj, "loading_data")
 
         images = {}
         for name, path in zip(['T1', 'T1c', 'T2', 'FLAIR'], file_paths):
             images[name] = load_and_preprocess(path)
         
-        if upload_obj:
-            update_progress(upload_obj, 60, "Processing")
+        update_status(upload_obj, "processing_scans")
 
         image_tensor = torch.stack([
             torch.tensor(images[mod], dtype=torch.float32)
@@ -92,8 +84,7 @@ def process_brain_scans(file_paths, output_dir, upload_obj=None):
         ])
         image_tensor = normalize_channels(image_tensor)
         
-        if upload_obj:
-            update_progress(upload_obj, 80, "Running inference")
+        update_status(upload_obj, "running_inference")
 
         with torch.inference_mode():
             model = load_optimized_model(device)
@@ -108,26 +99,23 @@ def process_brain_scans(file_paths, output_dir, upload_obj=None):
                 # Fallback to the old format for compatibility
                 prediction = torch.argmax(seg_out, dim=1).cpu().numpy()[0]
         
-        if upload_obj:
-            update_progress(upload_obj, 90, "Creating visualizations")
+        update_status(upload_obj, "creating_visualizations")
 
         create_quick_visualization(prediction, output_dir, images)
         
-        results = {
+        final_results = {
             'static_image': f'/media/results/{os.path.basename(output_dir)}/preview.png',
             'gif': f'/media/results/{os.path.basename(output_dir)}/animation.gif',
             'metrics': calculate_metrics(prediction),
-            'timestamp': time.time(),
-            'progress': 100,
-            'status': 'Complete'
+            'timestamp': time.time()
         }
         
         if upload_obj:
-            upload_obj.results = results
+            upload_obj.results = final_results
             upload_obj.status = 'complete'
             upload_obj.save()
         
-        return results
+        return final_results
         
     except Exception as e:
         print(f"Processing error: {str(e)}")
