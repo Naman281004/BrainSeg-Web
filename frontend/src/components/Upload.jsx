@@ -17,7 +17,7 @@ const Upload = () => {
     const location = useLocation();
     const { currentUser } = useAuth();
     const [uploading, setUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
+    const [statusMessage, setStatusMessage] = useState('');
 
     const isDemoMode = location.pathname === '/demo';
 
@@ -101,7 +101,7 @@ const Upload = () => {
     const handleUpload = async (e) => {
         e.preventDefault();
         setUploading(true);
-        setProgress(0);
+        setStatusMessage('Uploading files...');
 
         const formData = new FormData();
         Object.entries(selectedFiles).forEach(([modality, file]) => {
@@ -120,13 +120,16 @@ const Upload = () => {
                 onUploadProgress: (progressEvent) => {
                     if (progressEvent.lengthComputable) {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setProgress(percentCompleted);
+                        if (percentCompleted < 100) {
+                            setStatusMessage(`Uploading... ${percentCompleted}%`);
+                        } else {
+                            setStatusMessage('Upload complete. Waiting for server to queue task...');
+                        }
                     }
                 }
             });
 
             if (response.data.status_url) {
-                setProgress(10);
                 checkStatus(response.data.status_url);
             } else {
                 toast.error('Could not start processing. Please try again.');
@@ -139,33 +142,35 @@ const Upload = () => {
         }
     };
 
+    const statusMessages = {
+        'queued': 'Your request is in the queue. Preparing to process...',
+        'loading_model': 'Loading segmentation model. This may take a moment...',
+        'processing': 'Model loaded. Processing brain scans...',
+        'default': 'Processing... please wait.'
+    };
+
     const checkStatus = async (statusUrl) => {
         try {
             const response = await axios.get(statusUrl);
-            const { status, result, progress: serverProgress } = response.data;
+            const { status, result } = response.data;
+            
+            setStatusMessage(statusMessages[status] || statusMessages.default);
 
             if (status === 'failed') {
                 toast.error('Processing failed. Please try again.');
                 setUploading(false);
                 return;
             }
-            
-            if (status === 'processing' && serverProgress) {
-                setProgress(serverProgress);
-            }
 
             if (status === 'complete' && result) {
-                setProgress(100);
+                setStatusMessage('Processing complete! Redirecting...');
                 setTimeout(() => {
                     navigate('/results', { state: { results: result, isNewUpload: true, is_demo: isDemoMode } });
                 }, 1000);
                 return;
             }
 
-            if (progress < 90) {
-                setProgress(prev => Math.min(prev + 5, 90));
-            }
-            setTimeout(() => checkStatus(statusUrl), 2000);
+            setTimeout(() => checkStatus(statusUrl), 3000);
         } catch (error) {
             console.error('Error checking status:', error);
             toast.error('Error checking processing status');
@@ -248,41 +253,21 @@ const Upload = () => {
                     <button
                         onClick={handleUpload}
                         disabled={uploading || !Object.values(selectedFiles).every(Boolean)}
-                        className={`px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all ${
-                            uploading || !Object.values(selectedFiles).every(Boolean)
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-custom-blue text-white hover:bg-indigo-600'
-                        }`}
+                        className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
                     >
-                        {uploading ? 'Processing...' : 'Upload and Process'}
-                        {!uploading && <BrainCircuit className="w-5 h-5" />}
+                        {uploading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                <span>{statusMessage}</span>
+                            </>
+                        ) : (
+                            <>
+                                <BrainCircuit className="w-5 h-5 mr-2" />
+                                <span>Start Analysis</span>
+                            </>
+                        )}
                     </button>
                 </div>
-
-                 {uploading && progress > 0 && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full">
-                            <div className="flex flex-col items-center">
-                                <Loader2 className="w-12 h-12 text-custom-blue animate-spin mb-4" />
-                                <div className="mb-4 text-center">
-                                    <h3 className="text-lg font-semibold mb-1">
-                                        {isDemoMode ? 'Running Demo Analysis' : 'Processing Brain Scans'}
-                                    </h3>
-                                    <p className="text-sm text-gray-500">
-                                        {isDemoMode ? 'This may take a moment...' : 'Please wait while we process your files...'}
-                                    </p>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-custom-blue h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <p className="mt-2 text-sm text-gray-600">{progress}% Complete</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

@@ -44,6 +44,9 @@ def background_processor():
                 task = processing_queue.pop(0)
                 upload = task['upload']
                 try:
+                    upload.status = 'loading_model'
+                    upload.save()
+
                     # Lazy load the heavy processing function
                     from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
            
@@ -130,6 +133,10 @@ def upload_file(request):
                 'upload': uploads[0],
             })
         
+        # Set initial status to 'queued'
+        uploads[0].status = 'queued'
+        uploads[0].save()
+
         return Response({
             'message': 'Processing started',
             'status_url': f'/api/status/{uploads[0].id}/'
