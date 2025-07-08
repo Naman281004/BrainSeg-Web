@@ -6,50 +6,57 @@ const baseURL = import.meta.env.PROD
   ? "https://naman281004-brainseg-backend.hf.space"
   : "http://127.0.0.1:8000";
 
-const instance = axios.create({
+const axiosInstance = axios.create({
   baseURL: baseURL,  
   timeout: 30000,
   withCredentials: false,
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  }
 });
 
-delete instance.defaults.headers['Content-Type'];
-
-
-instance.interceptors.response.use(
-  response => {
+// Add a response interceptor to fix image URLs
+axiosInstance.interceptors.response.use(
+  (response) => {
     const data = response.data;
 
-    const processReport = (report) => {
-      if (report?.results?.static_image) {
-        if (!report.results.static_image.startsWith('http')) {
-          report.results.static_image = `${baseURL}${report.results.static_image}`;
+    // A recursive function to find and fix image paths in the response data
+    const fixPaths = (obj) => {
+      if (obj && typeof obj === 'object') {
+        if (obj.static_image && !obj.static_image.startsWith('http')) {
+          obj.static_image = `${baseURL}${obj.static_image}`;
         }
-        if (report.results.gif && !report.results.gif.startsWith('http')) {
-          report.results.gif = `${baseURL}${report.results.gif}`;
+        if (obj.gif && !obj.gif.startsWith('http')) {
+          obj.gif = `${baseURL}${obj.gif}`;
         }
+
+        // Recurse into nested objects and arrays
+        Object.keys(obj).forEach(key => fixPaths(obj[key]));
+      } else if (Array.isArray(obj)) {
+        obj.forEach(item => fixPaths(item));
       }
-      return report;
     };
 
-    if (Array.isArray(data)) {
-      response.data = data.map(processReport);
-    } else if (typeof data === 'object' && data !== null) {
-      response.data = processReport(data);
-    }
-    
+    fixPaths(data);
+
     return response;
   },
-  error => {
-    if (error.code === 'ERR_NETWORK') {
-      console.error('Network error - check if backend server is running');
-      toast.error('Cannot connect to server. Please try again later.');
+  (error) => {
+    // Log detailed error information for debugging
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("Response Error:", error.response.data);
+      console.error("Status:", error.response.status);
+      console.error("Headers:", error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("Request Error:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error Message:", error.message);
     }
+    toast.error('An unexpected error occurred. Please try again.');
     return Promise.reject(error);
   }
 );
 
-export default instance; 
+
+export default axiosInstance; 
