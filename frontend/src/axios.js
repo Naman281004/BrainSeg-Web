@@ -1,10 +1,13 @@
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Determine the base URL based on the environment
+const baseURL = import.meta.env.PROD
+  ? "https://naman281004-brainseg-backend.hf.space"
+  : "http://127.0.0.1:8000";
 
 const instance = axios.create({
-  baseURL: apiBaseUrl,  
+  baseURL: baseURL,  
   timeout: 30000,
   withCredentials: false,
   headers: {
@@ -23,10 +26,10 @@ instance.interceptors.response.use(
     const processReport = (report) => {
       if (report?.results?.static_image) {
         if (!report.results.static_image.startsWith('http')) {
-          report.results.static_image = `${apiBaseUrl}${report.results.static_image}`;
+          report.results.static_image = `${baseURL}${report.results.static_image}`;
         }
         if (report.results.gif && !report.results.gif.startsWith('http')) {
-          report.results.gif = `${apiBaseUrl}${report.results.gif}`;
+          report.results.gif = `${baseURL}${report.results.gif}`;
         }
       }
       return report;
