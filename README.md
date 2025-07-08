@@ -1,86 +1,142 @@
-# BrainSeg
+# BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
-## Quick Start Guide
+![BrainSeg Banner](path/to/your/banner-image.png)
+
+**Live Demo:** [**Explore the App**](http://your-live-demo-url.com)
+
+BrainSeg is an advanced web application that leverages a deep learning model to perform multi-modal brain tumor segmentation. Users can upload a series of NIfTI files (`.nii`) and receive a detailed analysis, including segmentation maps, 3D visualizations, and a comprehensive PDF report. This tool is designed to provide fast, accurate, and accessible brain scan analysis for researchers, medical professionals, and students.
+
+## Key Features
+
+-   **Multi-Modal Image Processing:** Accepts four types of MRI scans (T1, T1c, T2, FLAIR) for a comprehensive analysis.
+-   **AI-Powered Segmentation:** Utilizes a U-Net based deep learning model to accurately identify and segment different tumor regions:
+    -   Necrotic Core
+    -   Peritumoral Edema
+    -   GD-enhancing Tumor
+-   **Interactive Visualizations:** View the segmentation results as a static image and a dynamic GIF that scrolls through the brain scan slices.
+-   **Comprehensive PDF Reports:** Generate and download detailed reports that include patient information, segmentation results, and visual summaries.
+-   **User Authentication:** Secure user registration and login functionality provided by Firebase.
+-   **Demo Mode:** A "Live Demo" feature for recruiters and other visitors to test the application's capabilities without needing to register or provide their own scan data.
+-   **Report History:** Registered users can view and revisit their past analysis reports.
+
+## Screenshots
+
+|                  Login Page                   |                  Upload Interface                  |
+| :-------------------------------------------: | :----------------------------------------------: |
+| ![Login Page](path/to/your/login-screenshot.png) | ![Upload Page](path/to/your/upload-screenshot.png) |
+|                **Results View**                 |                **PDF Report**                |
+| ![Results Page](path/to/your/results-screenshot.png) | ![PDF Report](path/to/your/report-screenshot.png) |
+
+
+## Technology Stack
+
+| Area      | Technologies                                                                                             |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| **Frontend**  | React, Vite, Tailwind CSS, Firebase Authentication, React Router, Axios, Lucide React                     |
+| **Backend**   | Django, Django REST Framework, PostgreSQL, PyTorch, SimpleITK, Nibabel, Pillow, Matplotlib               |
+| **DevOps**    | Git, GitHub, Docker (optional)                                                                           |
+
+## Local Setup and Installation
+
+To run this project locally, please follow the steps below.
+
+### Prerequisites
+
+-   [Node.js](https://nodejs.org/) (v18 or later)
+-   [Python](https://www.python.org/) (v3.9 or later)
+-   [PostgreSQL](https://www.postgresql.org/download/)
 
 ### 1. Clone the Repository
-```
-git clone https://github.com/Naman281004/BrainSeg.git
+
+```bash
+git clone https://github.com/Naman281004/BrainSeg-Web.git
 cd BrainSeg-Web
 ```
 
 ### 2. Download Model Files
-Download these model files from Google Drive and place them in `backend/CODE_BRAINSEG/UNET_for_Multimodal_Semantic_Segmentation/`:
-best_model.pth
-Link: https://drive.google.com/file/d/1hHqU4qf6lxbeyXWNEK6hFlONqqA8JntE/view?usp=sharing
 
-model_weights.pth
-Link: https://drive.google.com/file/d/1OvFmdZXmB9s6f86bowy1vVn3FBQ52hwL/view?usp=sharing
+The deep learning model weights are required for the backend to function. Download the following files and place them in the `backend/CODE_BRAINSEG/UNET_for_Multimodal_Semantic_Segmentation/` directory:
 
-### 3. Frontend Setup
+-   [**best_model.pth**](https://drive.google.com/file/d/1hHqU4qf6lxbeyXWNEK6hFlONqqA8JntE/view?usp=sharing)
+-   [**model_weights.pth**](https://drive.google.com/file/d/1OvFmdZXmB9s6f86bowy1vVn3FBQ52hwL/view?usp=sharing)
+
+### 3. Backend Setup
+
 ```bash
-cd frontend
-npm install
-
-# Create a .env file in the root directory and add Firebase credentials
-# VITE_FIREBASE_API_KEY=xxx
-# VITE_FIREBASE_AUTH_DOMAIN=xxx
-# etc...
-//get it from me
-
-npm run dev
-```
-### 3. Database Setup
-1. Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
-2. During installation:
-   - Remember the password you set for postgres user
-   - Keep default port as 5432
-   - Install pgAdmin when prompted
-
-3. Open pgAdmin:
-   - Right-click on 'PostgreSQL' in the left sidebar
-   - Select 'Create' → 'Database'
-   - Set database name as 'BrainDB'
-   - Click Save
-
-4. Verify Connection:
-   - Database Name: BrainDB
-   - Username: postgres
-   - Password: (the one you set during installation)
-   - Host: localhost
-   - Port: 5432
-
-#### Database connection
-Create `.env` file in backend directory with:
-```
-DEBUG=True
-SECRET_KEY=your-secret-key
-DB_NAME=BrainDB
-DB_USER=postgres
-DB_PASSWORD={the password u set during installation}
-DB_HOST=localhost
-DB_PORT=5432 
-```
-### 4. Backend Setup
-```bash
+# Navigate to the backend directory
 cd backend
+
+# Create and activate a virtual environment
 python -m venv env
-env\Scripts\activate     # On Windows
-env/bin/activate         # On linux
-deactivate                     # to deactivate the virtual environment
+# On Windows:
+env\Scripts\activate
+# On macOS/Linux:
+source env/bin/activate
+
+# Install the required Python packages
 pip install -r requirements.txt
+
+# Set up the database (see instructions below)
+
+# Run database migrations
 python manage.py migrate
+
+# Start the backend server
 python manage.py runserver
 ```
 
+### 4. Database Setup
 
-- Both frontend and backend servers must be running simultaneously 
+1.  **Install and run PostgreSQL.**
+2.  Open **pgAdmin** or your preferred PostgreSQL client.
+3.  Create a new database named `BrainDB`.
+4.  Create a `.env` file inside the `backend` directory and add the following, replacing the placeholder values with your own credentials:
 
-From the Test/Test_Data/ upload the 4 nifti files of any of the 24 samples to see the generated segmentation
+    ```env
+    DEBUG=True
+    SECRET_KEY=your-super-secret-key
+    DB_NAME=BrainDB
+    DB_USER=postgres
+    DB_PASSWORD=your_postgres_password
+    DB_HOST=localhost
+    DB_PORT=5432
+    ```
 
-Left to resolve:
-1. dropdown issue
-2. footer's footer issue
-3. Celery Redis updation
-4. Internal Navigation 
-5. cybersec ddos
-6. scalability
+### 5. Frontend Setup
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Install the required npm packages
+npm install
+
+# Create a .env file in the frontend directory and add your Firebase credentials
+# Get these from your Firebase project settings
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Start the frontend development server
+npm run dev
+```
+
+### 6. Running the Application
+
+Ensure both the backend and frontend servers are running in separate terminals. The application will be accessible at `http://localhost:5173`.
+
+---
+
+## Live Demo Instructions
+
+The live demo allows you to test the application's core functionality without needing to register an account or upload your own files.
+
+1.  Click the **"Live Demo"** button on the homepage.
+2.  Select one of the pre-configured demo cases from the dropdown menu.
+3.  The application will automatically load the necessary files and process them.
+4.  View the results and generate a sample PDF report.
+
+The backend server must be running for the demo to work, as it still performs the AI processing.
