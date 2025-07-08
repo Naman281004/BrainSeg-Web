@@ -1,80 +1,60 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar'
-import HeroSection from './components/HeroSection'
-import Footer from './components/Footer'
-import SignIn from './components/SignIn'
-import { AuthProvider } from './contexts/AuthContext'
-import Dashboard from './components/Dashboard'
-import Register from './components/Register'
-import ForgotPassword from './components/ForgotPassword'
-import Upload from './components/Upload'
-import Results from './components/Results'
-import { Toaster } from 'react-hot-toast';
-import Contact from './components/Contact'
-import ReportsHistory from './components/ReportsHistory'
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './components/HeroSection';
+import FAQs from './components/FAQs';
+import Blog from './components/Blog';
+import Contact from './components/Contact';
+import SignIn from './components/SignIn';
+import Register from './components/Register';
+import Upload from './components/Upload';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
-import Blog from './components/Blog';
-import FAQs from './components/FAQs';
-import ResearchPapers from './components/ResearchPapers';
 import ScrollToTop from './components/ScrollToTop';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from 'react-hot-toast';
+import ForgotPassword from './components/ForgotPassword';
+import ResearchPapers from './components/ResearchPapers';
 
-function App() {
+// Lazy-loaded components
+const Results = lazy(() => import('./components/Results'));
+const ReportsHistory = lazy(() => import('./components/ReportsHistory'));
+const Reports = lazy(() => import('./components/Reports'));
+
+const App = () => {
   return (
     <Router>
       <AuthProvider>
         <ScrollToTop />
-        <Toaster position="top-center" />
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<HeroSection />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/faqs" element={<FAQs />} />
-              <Route path="/research-papers" element={<ResearchPapers />} />
-              <Route path="/demo" element={<Upload />} />
-              <Route path="/results" element={<Results />} />
-
-              <Route path="/signin" element={
-                <PublicRoute>
-                  <SignIn />
-                </PublicRoute>
-              } />
-              <Route path="/register" element={
-                <PublicRoute>
-                  <Register />
-                </PublicRoute>
-              } />
-              <Route path="/forgot-password" element={
-                <PublicRoute>
-                  <ForgotPassword />
-                </PublicRoute>
-              } />
-
-              <Route path="/upload" element={
-                <ProtectedRoute>
-                  <Upload />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/reports" element={
-                <ProtectedRoute>
-                  <ReportsHistory />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </main>
-          <Footer/>
-        </div>
+        <Navbar />
+        <Suspense fallback={<div className="h-screen flex justify-center items-center">Loading page...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/faqs" element={<FAQs />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/research-papers" element={<ResearchPapers />} />
+            
+            <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            
+            {/* The Upload component is used for both /demo and /upload */}
+            <Route path="/demo" element={<Upload />} />
+            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+            
+            {/* Lazy-loaded routes */}
+            <Route path="/results" element={<Results />} />
+            <Route path="/reports-history" element={<ProtectedRoute><ReportsHistory /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          </Routes>
+        </Suspense>
+        <Footer />
+        <Toaster position="top-center" reverseOrder={false} />
       </AuthProvider>
     </Router>
-  )
-}
+  );
+};
 
-export default App
+export default App;

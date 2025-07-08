@@ -10,7 +10,6 @@ from .models import UserUpload, ProcessedResult
 from .serializers import UserUploadSerializer, ProcessedResultSerializer
 import os
 from django.conf import settings
-from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from firebase_admin import auth
 from django.core.cache import cache
@@ -45,6 +44,8 @@ def background_processor():
             if processing_queue:
                 task = processing_queue.pop(0)
                 try:
+                    # Lazy load the heavy processing function
+                    from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
            
                     output_dir = os.path.join(settings.MEDIA_ROOT, 'results', str(task['upload'].batch_id))
                     os.makedirs(output_dir, exist_ok=True)
