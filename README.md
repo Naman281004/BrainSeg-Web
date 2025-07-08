@@ -1,13 +1,17 @@
 # BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
+**[View Live Application](https://brainseg-frontend-7zk0.onrender.com)**
+
+#video demo
 <p align="center">
 <img src="./screenshots/Recording-2025-07-09-022504.gif" alt="BrainSeg Application Demo"/>
+</p>
+#Screenshots
+<p align="center">
   <img src="./screenshots/Screenshot%202025-07-08%20175706.png"  />
   <img src="./screenshots/Screenshot%202025-07-08%20175712.png"  />
   <img src="./screenshots/Screenshot%202025-07-08%20175718.png"  />
 </p>
-
-**[View Live Application](https://brainseg-frontend-7zk0.onrender.com)**
 
 BrainSeg is a full-stack web application designed for AI-powered medical imaging analysis, specifically focusing on multi-modal brain tumor segmentation. It enables authenticated users to upload a complete set of four MRI scan types (T1, T1c, T2, and FLAIR) in NIfTI format.
 
