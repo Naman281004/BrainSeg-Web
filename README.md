@@ -1,6 +1,7 @@
 # BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
 <p align="center">
+<img src="./screenshots/Recording-2025-07-09-022504.gif" alt="BrainSeg Application Demo"/>
   <img src="./screenshots/Screenshot%202025-07-08%20175706.png"  />
   <img src="./screenshots/Screenshot%202025-07-08%20175712.png"  />
   <img src="./screenshots/Screenshot%202025-07-08%20175718.png"  />
