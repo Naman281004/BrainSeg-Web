@@ -21,6 +21,7 @@ except ImportError:
 from django.conf import settings
 from django.contrib.auth.models import User
 from api.models import UserUpload
+from .model import BrainTumorSegModel
 
 def create_seg_colormap():
     return ListedColormap([

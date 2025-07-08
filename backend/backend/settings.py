@@ -16,6 +16,10 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
+import base64
+import json
+import firebase_admin
+from firebase_admin import credentials
 
 # Load environment variables
 load_dotenv()
@@ -26,13 +30,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add CODE_BRAINSEG to Python path
 sys.path.append(str(BASE_DIR))
 
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 # Add Render.com URL to allowed hosts
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -105,12 +112,26 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        # Replace this value with your local database connection string,
-        # if you are developing locally.
-        default=f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
-        conn_max_age=600
+        default=os.environ.get('DATABASE_URL')
     )
 }
+
+# Firebase configuration
+firebase_credentials_base64 = os.environ.get('FIREBASE_CREDENTIALS_BASE64')
+if firebase_credentials_base64:
+    firebase_credentials_json = base64.b64decode(firebase_credentials_base64).decode('utf-8')
+    firebase_credentials = json.loads(firebase_credentials_json)
+    cred = credentials.Certificate(firebase_credentials)
+    firebase_admin.initialize_app(cred)
+else:
+    # Local development: use the JSON file
+    FIREBASE_APP_NAME = 'BrainSeg'
+    SERVICE_ACCOUNT_KEY_PATH = os.path.join(BASE_DIR, '..', 'serviceAccountKey.json')
+    if os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
+        cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': f'{FIREBASE_APP_NAME}.appspot.com'
+        })
 
 
 # Password validation
@@ -148,13 +169,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Following settings only make sense on production and may break development environments.
 if not DEBUG:
-    # Tell Django to copy statics to the `staticfiles` directory
-    # in your application directory on Render.
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
     # Turn on WhiteNoise storage backend that takes care of compressing static files
     # and creating unique names for each version so they can be safely cached forever.
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -167,11 +185,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Create the media directories
-os.makedirs(os.path.join(MEDIA_ROOT, 'results'), exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, 'uploads'), exist_ok=True)
+MEDIA_ROOT = '/tmp/media'
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [

@@ -20,7 +20,6 @@ from django.db import models
 from django.core.files.storage import FileSystemStorage
 
 
-
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -43,19 +42,18 @@ def background_processor():
         with processing_lock:
             if processing_queue:
                 task = processing_queue.pop(0)
+                upload = task['upload']
                 try:
                     # Lazy load the heavy processing function
                     from CODE_BRAINSEG.UNET_for_Multimodal_Semantic_Segmentation.process_files import process_brain_scans
            
-                    output_dir = os.path.join(settings.MEDIA_ROOT, 'results', str(task['upload'].batch_id))
+                    output_dir = os.path.join(settings.MEDIA_ROOT, 'results', str(upload.batch_id))
                     os.makedirs(output_dir, exist_ok=True)
                     
-             
-                    upload = task['upload']
                     upload.status = 'processing'
                     upload.save()
                
-                    results = process_brain_scans(task['file_paths'], output_dir)
+                    results = process_brain_scans(task['file_paths'], output_dir, upload)
         
                     upload.results = results
                     upload.status = 'complete'
@@ -152,10 +150,11 @@ def upload_file(request):
 def processing_status(request, upload_id):
     try:
         upload = UserUpload.objects.get(id=upload_id)
+        serializer = UserUploadSerializer(upload, context={'request': request})
         return Response({
-            'status': upload.status,
-            'result': upload.results,
-            'error': upload.error_message if hasattr(upload, 'error_message') else None
+            'status': serializer.data['status'],
+            'result': serializer.data['results'],
+            'error': serializer.data['error_message']
         })
     except UserUpload.DoesNotExist:
         return Response({'error': 'Upload not found'}, status=404)
@@ -164,7 +163,7 @@ def processing_status(request, upload_id):
 def get_results(request, user_id):
     try:
         uploads = UserUpload.objects.filter(user_id=user_id)
-        serializer = UserUploadSerializer(uploads, many=True)
+        serializer = UserUploadSerializer(uploads, many=True, context={'request': request})
         return Response(serializer.data)
     except Exception as e:
         return Response(
@@ -206,7 +205,7 @@ def get_user_reports(request, user_id):
         
         print(f"Found {len(reports)} unique reports")
         
-        serializer = UserUploadSerializer(reports, many=True)
+        serializer = UserUploadSerializer(reports, many=True, context={'request': request})
         return Response(serializer.data)
         
     except Exception as e:
@@ -216,48 +215,4 @@ def get_user_reports(request, user_id):
         return Response(
             {'error': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def demo_upload(request):
-    try:
-        files = request.FILES.getlist('nifti_files')
-        print("\n=== Starting DEMO File Upload Processing ===")
-        print(f"Number of files received: {len(files)}")
-
-        if len(files) != 4:
-            return Response(
-                {'error': f'Expected 4 files, got {len(files)}'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Create a unique temporary directory for this demo session
-        fs = FileSystemStorage()
-        temp_dir_name = f"demo_{uuid.uuid4()}"
-        temp_output_dir = os.path.join(settings.MEDIA_ROOT, 'results', temp_dir_name)
-        os.makedirs(temp_output_dir, exist_ok=True)
-        
-        file_paths = []
-        for f in files:
-            # Save the file to a temporary location within the media root
-            filename = fs.save(os.path.join(temp_dir_name, f.name), f)
-            file_paths.append(fs.path(filename))
-
-        # Process the files without a database object
-        results = process_brain_scans(file_paths, temp_output_dir, upload_obj=None)
-        
-        print("=== DEMO Processing Complete ===")
-        return Response(results, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        print("\n=== Error in demo_upload ===")
-        print(f"Error type: {type(e).__name__}")
-        print(f"Error details: {str(e)}")
-        import traceback
-        print(f"Full traceback:\n{traceback.format_exc()}")
-        return Response(
-            {'error': f'Processing failed: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
+        ) 
