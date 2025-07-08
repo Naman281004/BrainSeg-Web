@@ -1,10 +1,18 @@
 # BrainSeg: AI-Powered Brain Tumor Segmentation Analysis
 
-![BrainSeg Banner](./screenshots/Screenshot%202025-07-08%20175706.png)
+<p align="center">
+  <img src="./screenshots/Screenshot%202025-07-08%20175706.png"  />
+  <img src="./screenshots/Screenshot%202025-07-08%20175712.png"  />
+  <img src="./screenshots/Screenshot%202025-07-08%20175718.png"  />
+</p>
 
-**Live Demo:** [**Explore the App**](http://your-live-demo-url.com)
+**[View Live Application](https://brainseg-frontend-7zk0.onrender.com)**
 
-BrainSeg is an advanced web application that leverages a deep learning model to perform multi-modal brain tumor segmentation. Users can upload a series of NIfTI files (`.nii`) and receive a detailed analysis, including segmentation maps, 3D visualizations, and a comprehensive PDF report. This tool is designed to provide fast, accurate, and accessible brain scan analysis for researchers, medical professionals, and students.
+BrainSeg is a full-stack web application designed for AI-powered medical imaging analysis, specifically focusing on multi-modal brain tumor segmentation. It enables authenticated users to upload a complete set of four MRI scan types (T1, T1c, T2, and FLAIR) in NIfTI format.
+
+The backend, built with **Django** and **PostgreSQL**, processes these scans using an asynchronous task queue. A **PyTorch**-based **U-Net** model performs semantic segmentation to identify key tumor regions: the necrotic core, peritumoral edema, and the GD-enhancing tumor.
+
+The **React** frontend, styled with **Tailwind CSS**, provides a seamless user experience for file upload and results visualization. Once processing is complete, users can view interactive results, including a static segmentation map and an animated GIF that scrolls through the scan slices. The platform also features secure user authentication via **Firebase** and allows users to generate and download comprehensive PDF reports directly from the browser.
 
 ## Key Features
 
@@ -16,16 +24,15 @@ BrainSeg is an advanced web application that leverages a deep learning model to 
 -   **Interactive Visualizations:** View the segmentation results as a static image and a dynamic GIF that scrolls through the brain scan slices.
 -   **Comprehensive PDF Reports:** Generate and download detailed reports that include patient information, segmentation results, and visual summaries.
 -   **User Authentication:** Secure user registration and login functionality provided by Firebase.
--   **Demo Mode:** A "Live Demo" feature for recruiters and other visitors to test the application's capabilities without needing to register or provide their own scan data.
 -   **Report History:** Registered users can view and revisit their past analysis reports.
 
 ## Screenshots
 
-|                  Login Page                   |                  Upload Interface                  |
-| :-------------------------------------------: | :----------------------------------------------: |
-| ![Login Page](./screenshots/Screenshot%202025-07-08%20175712.png) | ![Upload Page](./screenshots/Screenshot%202025-07-08%20175718.png) |
-|                **Results View**                 |                **PDF Report**                |
-| ![Results Page](./screenshots/Screenshot%202025-07-08%20175725.png) | ![PDF Report](./screenshots/Screenshot%202025-07-08%20175831.png) |
+| Upload Interface | Backend Processing | Segmentation Results |
+| :---: | :---: | :---: |
+| ![Upload Page](./screenshots/Screenshot%202025-07-08%20180007.png) | ![Processing](./screenshots/Screenshot%202025-07-08%20180016.png) | ![Results Page](./screenshots/Screenshot%202025-07-08%20180038.png) |
+| **PDF Report** | **Report History** | |
+| ![PDF Report](./screenshots/Screenshot%202025-07-08%20180056.png) | ![Report History](./screenshots/Screenshot%202025-07-08%20180125.png) | |
 
 
 ## Technology Stack
@@ -127,16 +134,3 @@ npm run dev
 ### 6. Running the Application
 
 Ensure both the backend and frontend servers are running in separate terminals. The application will be accessible at `http://localhost:5173`.
-
----
-
-## Live Demo Instructions
-
-The live demo allows you to test the application's core functionality without needing to register an account or upload your own files.
-
-1.  Click the **"Live Demo"** button on the homepage.
-2.  Select one of the pre-configured demo cases from the dropdown menu.
-3.  The application will automatically load the necessary files and process them.
-4.  View the results and generate a sample PDF report.
-
-The backend server must be running for the demo to work, as it still performs the AI processing.
