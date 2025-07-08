@@ -1,7 +1,10 @@
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:8000',  
+  baseURL: apiBaseUrl,  
   timeout: 30000,
   withCredentials: false,
   headers: {
@@ -20,10 +23,10 @@ instance.interceptors.response.use(
     const processReport = (report) => {
       if (report?.results?.static_image) {
         if (!report.results.static_image.startsWith('http')) {
-          report.results.static_image = `http://localhost:8000${report.results.static_image}`;
+          report.results.static_image = `${apiBaseUrl}${report.results.static_image}`;
         }
         if (report.results.gif && !report.results.gif.startsWith('http')) {
-          report.results.gif = `http://localhost:8000${report.results.gif}`;
+          report.results.gif = `${apiBaseUrl}${report.results.gif}`;
         }
       }
       return report;
